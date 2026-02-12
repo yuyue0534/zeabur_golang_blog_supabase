@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人博客管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 顶部栏 */
+        .topbar {
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+        }
+
+        .topbar h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        /* 主容器 */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 50px);
+        }
+
+        /* 左侧菜单 */
+        .sidebar {
+            width: 200px;
+            background: #001529;
+            color: white;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .menu-item.active {
+            background: #1890ff;
+            border-left-color: #40a9ff;
+        }
+
+        /* 右侧内容区 */
+        .content-area {
+            flex: 1;
+            background: #fff;
+            margin: 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 6px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #40a9ff;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff7875;
+        }
+
+        .btn-success {
+            background: #52c41a;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* 提示框 */
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+            font-size: 13px;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+
+        .alert-error {
+            background: #fff2f0;
+            color: #ff4d4f;
+            border: 1px solid #ffccc7;
+        }
+
+        /* 文章卡片 */
+        .post-card {
+            border: 1px solid #f0f0f0;
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+
+        .post-card:hover {
+            border-color: #1890ff;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+        }
+
+        .post-card h3 {
+            color: #333;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .post-card h3:hover {
+            color: #1890ff;
+        }
+
+        .post-meta {
+            color: #8c8c8c;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .post-content {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* 评论卡片 */
+        .comment-card {
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            border-left: 3px solid #1890ff;
+        }
+
+        .comment-meta {
+            color: #8c8c8c;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .comment-content {
+            color: #333;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        /* 页面标题 */
+        .page-header {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .page-header h2 {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .back-btn {
+            margin-bottom: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #8c8c8c;
+            font-size: 13px;
+        }
+
+        /* 配置区域 */
+        .config-section {
+            background: #fafafa;
+            padding: 16px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .config-section h3 {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .test-results {
+            margin-top: 16px;
+            padding: 12px;
+            background: #fafafa;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #f0f0f0;
+        }
+
+        .test-item {
+            padding: 6px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .test-success {
+            background: #f6ffed;
+            color: #52c41a;
+        }
+
+        .test-error {
+            background: #fff2f0;
+            color: #ff4d4f;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* 详情页样式 */
+        .post-detail-header {
+            margin-bottom: 20px;
+        }
+
+        .post-detail-header h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .comments-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .comments-section h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 160px;
+            }
+
+            .topbar h1 {
+                font-size: 16px;
+            }
+
+            .content-area {
+                margin: 8px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶部栏 -->
+    <div class="topbar">
+        <h1>🚀 个人博客管理系统</h1>
+        <div class="user-info">
+            <span id="userDisplay"></span>
+            <button id="logoutBtn" class="btn btn-secondary btn-small hidden">退出</button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 左侧菜单 -->
+        <div class="sidebar">
+            <div class="menu-item active" data-page="home">📚 首页</div>
+            <div class="menu-item" data-page="login">🔐 登录</div>
+            <div class="menu-item" data-page="register">📝 注册</div>
+            <div class="menu-item" data-page="myPosts">📖 我的文章</div>
+            <div class="menu-item" data-page="createPost">✏️ 发布文章</div>
+            <div class="menu-item" data-page="test">🧪 API测试</div>
+        </div>
+
+        <!-- 右侧内容区 -->
+        <div class="content-area">
+            <div id="alertBox" class="alert"></div>
+
+            <!-- 首页 -->
+            <div id="homePage" class="page">
+                <div class="page-header">
+                    <h2>最新文章</h2>
+                </div>
+                <div id="postsList"></div>
+            </div>
+
+            <!-- 登录页 -->
+            <div id="loginPage" class="page hidden">
+                <div class="page-header">
+                    <h2>用户登录</h2>
+                </div>
+                <form id="loginForm" style="max-width: 400px;">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" id="loginUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">登录</button>
+                </form>
+            </div>
+
+            <!-- 注册页 -->
+            <div id="registerPage" class="page hidden">
+                <div class="page-header">
+                    <h2>用户注册</h2>
+                </div>
+                <form id="registerForm" style="max-width: 400px;">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" id="regUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" id="regEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="regPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">注册</button>
+                </form>
+            </div>
+
+            <!-- 我的文章 -->
+            <div id="myPostsPage" class="page hidden">
+                <div class="page-header">
+                    <h2>我的文章</h2>
+                </div>
+                <div id="myPostsList"></div>
+            </div>
+
+            <!-- 发布文章 -->
+            <div id="createPostPage" class="page hidden">
+                <div class="page-header">
+                    <h2>发布文章</h2>
+                </div>
+                <form id="createPostForm" style="max-width: 800px;">
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" id="postTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>内容</label>
+                        <textarea id="postContent" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">发布</button>
+                </form>
+            </div>
+
+            <!-- 文章详情 -->
+            <div id="postDetailPage" class="page hidden">
+                <button class="btn btn-secondary back-btn" onclick="app.showPage('home')">← 返回</button>
+                <div id="postDetail"></div>
+                <div class="comments-section">
+                    <h3>💬 评论区</h3>
+                    <form id="commentForm" class="hidden" style="margin-bottom: 20px;">
+                        <div class="form-group">
+                            <textarea id="commentContent" placeholder="写下你的评论..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">发表评论</button>
+                    </form>
+                    <div id="commentsList"></div>
+                </div>
+            </div>
+
+            <!-- 编辑文章 -->
+            <div id="editPostPage" class="page hidden">
+                <button class="btn btn-secondary back-btn" onclick="app.showPage('myPosts')">← 返回</button>
+                <div class="page-header">
+                    <h2>编辑文章</h2>
+                </div>
+                <form id="editPostForm" style="max-width: 800px;">
+                    <input type="hidden" id="editPostId">
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" id="editPostTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>内容</label>
+                        <textarea id="editPostContent" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </form>
+            </div>
+
+            <!-- API测试 -->
+            <div id="testPage" class="page hidden">
+                <div class="page-header">
+                    <h2>API测试中心</h2>
+                </div>
+
+                <div class="config-section">
+                    <h3>⚙️ 配置</h3>
+                    <div class="form-group">
+                        <label>API Base URL</label>
+                        <input type="text" id="apiBaseUrl" value="http://localhost:8080/api/v1">
+                    </div>
+                    <button class="btn btn-primary" onclick="app.saveConfig()">保存配置</button>
+                </div>
+
+                <div class="config-section">
+                    <h3>🔍 测试选项</h3>
+                    <button class="btn btn-success" onclick="app.runAllTests()">运行全部测试</button>
+                    <button class="btn btn-primary" onclick="app.testHealth()">健康检查</button>
+                    <button class="btn btn-primary" onclick="app.testAuth()">测试认证</button>
+                    <button class="btn btn-primary" onclick="app.testPosts()">测试文章</button>
+                    <button class="btn btn-primary" onclick="app.testComments()">测试评论</button>
+                    <button class="btn btn-danger" onclick="app.clearTestResults()">清除结果</button>
+                </div>
+
+                <div class="test-results" id="testResults">
+                    <p style="color: #8c8c8c;">测试结果将显示在这里...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var app = {
+            apiBase: 'http://localhost:8080/api/v1',
+            token: localStorage.getItem('token') || '',
+            user: null,
+            currentPost: null,
+
+            init: function () {
+                this.loadConfig();
+                this.bindEvents();
+                if (this.token) {
+                    this.fetchProfile();
+                }
+                this.fetchPosts();
+            },
+
+            loadConfig: function () {
+                var saved = localStorage.getItem('apiBase');
+                if (saved) {
+                    this.apiBase = saved;
+                    document.getElementById('apiBaseUrl').value = saved;
+                }
+            },
+
+            saveConfig: function () {
+                this.apiBase = document.getElementById('apiBaseUrl').value;
+                localStorage.setItem('apiBase', this.apiBase);
+                this.showAlert('success', '配置已保存');
+            },
+
+            bindEvents: function () {
+                var self = this;
+
+                document.querySelectorAll('.menu-item').forEach(function (item) {
+                    item.addEventListener('click', function (e) {
+                        var page = e.target.dataset.page;
+                        self.showPage(page);
+                    });
+                });
+
+                document.getElementById('loginForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    self.handleLogin();
+                });
+
+                document.getElementById('registerForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    self.handleRegister();
+                });
+
+                document.getElementById('createPostForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    self.handleCreatePost();
+                });
+
+                document.getElementById('editPostForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    self.handleUpdatePost();
+                });
+
+                document.getElementById('commentForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    self.handleCreateComment();
+                });
+
+                document.getElementById('logoutBtn').addEventListener('click', function () {
+                    self.handleLogout();
+                });
+            },
+
+            showPage: function (page) {
+                var self = this;
+                document.querySelectorAll('.page').forEach(function (p) {
+                    p.classList.add('hidden');
+                });
+                document.querySelectorAll('.menu-item').forEach(function (m) {
+                    m.classList.remove('active');
+                });
+
+                var pageMap = {
+                    'home': 'homePage',
+                    'login': 'loginPage',
+                    'register': 'registerPage',
+                    'myPosts': 'myPostsPage',
+                    'createPost': 'createPostPage',
+                    'test': 'testPage'
+                };
+
+                var pageId = pageMap[page];
+                if (pageId) {
+                    document.getElementById(pageId).classList.remove('hidden');
+                    var menuItem = document.querySelector('[data-page="' + page + '"]');
+                    if (menuItem) menuItem.classList.add('active');
+                }
+
+                if (page === 'myPosts') {
+                    this.fetchMyPosts();
+                } else if (page === 'home') {
+                    this.fetchPosts();
+                }
+            },
+
+            showAlert: function (type, message) {
+                var alert = document.getElementById('alertBox');
+                alert.className = 'alert alert-' + type + ' show';
+                alert.textContent = message;
+                setTimeout(function () {
+                    alert.classList.remove('show');
+                }, 5000);
+            },
+
+            updateUserDisplay: function () {
+                var display = document.getElementById('userDisplay');
+                var logoutBtn = document.getElementById('logoutBtn');
+
+                if (this.user) {
+                    display.textContent = '👤 ' + this.user.username;
+                    logoutBtn.classList.remove('hidden');
+                } else {
+                    display.textContent = '';
+                    logoutBtn.classList.add('hidden');
+                }
+            },
+
+            fetchProfile: function () {
+                var self = this;
+                fetch(this.apiBase + '/profile', {
+                    headers: { 'Authorization': 'Bearer ' + this.token }
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.user = data.data;
+                            self.updateUserDisplay();
+                        } else {
+                            self.handleLogout();
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error('Fetch profile error:', err);
+                    });
+            },
+
+            handleLogin: function () {
+                var self = this;
+                var username = document.getElementById('loginUsername').value;
+                var password = document.getElementById('loginPassword').value;
+
+                fetch(this.apiBase + '/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: password })
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.token = data.data.token;
+                            localStorage.setItem('token', self.token);
+                            self.fetchProfile();
+                            self.showAlert('success', '登录成功!');
+                            self.showPage('home');
+                            document.getElementById('loginForm').reset();
+                        } else {
+                            self.showAlert('error', data.message || '登录失败');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '登录请求失败');
+                    });
+            },
+
+            handleRegister: function () {
+                var self = this;
+                var username = document.getElementById('regUsername').value;
+                var email = document.getElementById('regEmail').value;
+                var password = document.getElementById('regPassword').value;
+
+                fetch(this.apiBase + '/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, email: email, password: password })
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.showAlert('success', '注册成功!请登录');
+                            self.showPage('login');
+                            document.getElementById('registerForm').reset();
+                        } else {
+                            self.showAlert('error', data.message || '注册失败');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '注册请求失败');
+                    });
+            },
+
+            handleLogout: function () {
+                this.token = '';
+                this.user = null;
+                localStorage.removeItem('token');
+                this.updateUserDisplay();
+                this.showAlert('success', '已退出登录');
+                this.showPage('home');
+            },
+
+            fetchPosts: function () {
+                var self = this;
+                fetch(this.apiBase + '/posts')
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.renderPosts(data.data.posts || [], 'postsList');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '获取文章列表失败');
+                    });
+            },
+
+            fetchMyPosts: function () {
+                var self = this;
+                if (!this.token) {
+                    this.showAlert('error', '请先登录');
+                    return;
+                }
+
+                fetch(this.apiBase + '/posts', {
+                    headers: { 'Authorization': 'Bearer ' + this.token }
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            var myPosts = (data.data.posts || []).filter(function (post) {
+                                return post.user_id === self.user.id;
+                            });
+                            self.renderPosts(myPosts, 'myPostsList', true);
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '获取我的文章失败');
+                    });
+            },
+
+            renderPosts: function (posts, containerId, showActions) {
+                var self = this;
+                var container = document.getElementById(containerId);
+
+                if (!posts || posts.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div style="font-size: 40px;">📭</div><p>暂无文章</p></div>';
+                    return;
+                }
+
+                container.innerHTML = posts.map(function (post) {
+                    var actions = '';
+                    if (showActions && self.user && post.user_id === self.user.id) {
+                        actions = '<div class="post-actions">' +
+                            '<button class="btn btn-primary btn-small" onclick="app.editPost(' + post.ID + ')">✏️ 编辑</button>' +
+                            '<button class="btn btn-danger btn-small" onclick="app.deletePost(' + post.ID + ')">🗑️ 删除</button>' +
+                            '</div>';
+                    }
+
+                    return '<div class="post-card">' +
+                        '<h3 onclick="app.viewPost(' + post.ID + ')">' + post.title + '</h3>' +
+                        '<div class="post-meta">👤 ' + (post.user ? post.user.username : '未知') + ' | 📅 ' + new Date(post.CreatedAt).toLocaleString('zh-CN') + '</div>' +
+                        '<div class="post-content">' + post.content.substring(0, 150) + (post.content.length > 150 ? '...' : '') + '</div>' +
+                        actions +
+                        '</div>';
+                }).join('');
+            },
+
+            viewPost: function (id) {
+                var self = this;
+                fetch(this.apiBase + '/posts/' + id)
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.currentPost = data.data;
+                            self.renderPostDetail(data.data);
+                            self.fetchComments(id);
+
+                            document.querySelectorAll('.page').forEach(function (p) {
+                                p.classList.add('hidden');
+                            });
+                            document.getElementById('postDetailPage').classList.remove('hidden');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '获取文章详情失败');
+                    });
+            },
+
+            renderPostDetail: function (post) {
+                var container = document.getElementById('postDetail');
+                container.innerHTML = '<div class="post-detail-header"><h2>' + post.title + '</h2>' +
+                    '<div class="post-meta">👤 ' + (post.user ? post.user.username : '未知') + ' | 📅 ' + new Date(post.CreatedAt).toLocaleString('zh-CN') + '</div></div>' +
+                    '<div class="post-content" style="line-height: 1.8; white-space: pre-wrap;">' + post.content + '</div>';
+
+                var commentForm = document.getElementById('commentForm');
+                if (this.token) {
+                    commentForm.classList.remove('hidden');
+                } else {
+                    commentForm.classList.add('hidden');
+                }
+            },
+
+            fetchComments: function (postId) {
+                var self = this;
+                fetch(this.apiBase + '/comments/post/' + postId)
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.renderComments(data.data || []);
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error('Fetch comments error:', err);
+                    });
+            },
+
+            renderComments: function (comments) {
+                var container = document.getElementById('commentsList');
+
+                if (!comments || comments.length === 0) {
+                    container.innerHTML = '<p style="color: #8c8c8c; text-align: center;">暂无评论,快来发表第一条评论吧!</p>';
+                    return;
+                }
+
+                container.innerHTML = comments.map(function (comment) {
+                    return '<div class="comment-card">' +
+                        '<div class="comment-meta">👤 ' + (comment.user ? comment.user.username : '未知') + ' | ' + new Date(comment.CreatedAt).toLocaleString('zh-CN') + '</div>' +
+                        '<div class="comment-content">' + comment.content + '</div>' +
+                        '</div>';
+                }).join('');
+            },
+
+            handleCreatePost: function () {
+                var self = this;
+                if (!this.token) {
+                    this.showAlert('error', '请先登录');
+                    return;
+                }
+
+                var title = document.getElementById('postTitle').value;
+                var content = document.getElementById('postContent').value;
+
+                fetch(this.apiBase + '/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + this.token
+                    },
+                    body: JSON.stringify({ title: title, content: content })
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.showAlert('success', '文章发布成功!');
+                            document.getElementById('createPostForm').reset();
+                            self.showPage('myPosts');
+                        } else {
+                            self.showAlert('error', data.message || '发布失败');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '发布请求失败');
+                    });
+            },
+
+            editPost: function (id) {
+                var self = this;
+                fetch(this.apiBase + '/posts/' + id)
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            document.getElementById('editPostId').value = data.data.ID;
+                            document.getElementById('editPostTitle').value = data.data.title;
+                            document.getElementById('editPostContent').value = data.data.content;
+
+                            document.querySelectorAll('.page').forEach(function (p) {
+                                p.classList.add('hidden');
+                            });
+                            document.getElementById('editPostPage').classList.remove('hidden');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '获取文章信息失败');
+                    });
+            },
+
+            handleUpdatePost: function () {
+                var self = this;
+                var id = document.getElementById('editPostId').value;
+                var title = document.getElementById('editPostTitle').value;
+                var content = document.getElementById('editPostContent').value;
+                fetch(this.apiBase + '/posts/' + id, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + this.token
+                    },
+                    body: JSON.stringify({ title: title, content: content })
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.showAlert('success', '文章更新成功!');
+                            self.showPage('myPosts');
+                        } else {
+                            self.showAlert('error', data.message || '更新失败');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '更新请求失败');
+                    });
+            },
+
+            deletePost: function (id) {
+                var self = this;
+                if (!confirm('确定要删除这篇文章吗?')) return;
+
+                fetch(this.apiBase + '/posts/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + this.token }
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.showAlert('success', '文章删除成功!');
+                            self.fetchMyPosts();
+                        } else {
+                            self.showAlert('error', data.message || '删除失败');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '删除请求失败');
+                    });
+            },
+
+            handleCreateComment: function () {
+                var self = this;
+                if (!this.token) {
+                    this.showAlert('error', '请先登录');
+                    return;
+                }
+
+                var content = document.getElementById('commentContent').value;
+                var postId = this.currentPost.ID;
+
+                fetch(this.apiBase + '/posts/' + postId + '/comments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + this.token
+                    },
+                    body: JSON.stringify({ content: content })
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.code === 200) {
+                            self.showAlert('success', '评论发表成功!');
+                            document.getElementById('commentContent').value = '';
+                            self.fetchComments(postId);
+                        } else {
+                            self.showAlert('error', data.message || '评论失败');
+                        }
+                    })
+                    .catch(function (err) {
+                        self.showAlert('error', '评论请求失败');
+                    });
+            },
+
+            addTestResult: function (message, success) {
+                var results = document.getElementById('testResults');
+                var div = document.createElement('div');
+                div.className = 'test-item test-' + (success ? 'success' : 'error');
+                div.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+                results.insertBefore(div, results.firstChild);
+            },
+
+            clearTestResults: function () {
+                document.getElementById('testResults').innerHTML = '<p style="color: #8c8c8c;">测试结果将显示在这里...</p>';
+            },
+
+            testHealth: function () {
+                var self = this;
+                this.addTestResult('开始健康检查测试...', true);
+
+                fetch('http://localhost:8080/health')
+                    .then(function (res) {
+                        if (res.ok) {
+                            self.addTestResult('✔ 健康检查通过', true);
+                        } else {
+                            self.addTestResult('✗ 健康检查失败', false);
+                        }
+                    })
+                    .catch(function (err) {
+                        self.addTestResult('✗ 健康检查错误: ' + err.message, false);
+                    });
+            },
+
+            testAuth: function () {
+                var self = this;
+                this.addTestResult('开始认证测试...', true);
+
+                var testUser = {
+                    username: 'test_' + Date.now(),
+                    email: 'test_' + Date.now() + '@example.com',
+                    password: 'test123456'
+                };
+
+                fetch(this.apiBase + '/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testUser)
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (regData) {
+                        if (regData.code === 200) {
+                            self.addTestResult('✔ 注册测试通过', true);
+
+                            return fetch(self.apiBase + '/auth/login', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    username: testUser.username,
+                                    password: testUser.password
+                                })
+                            });
+                        } else {
+                            self.addTestResult('✗ 注册测试失败', false);
+                            throw new Error('Registration failed');
+                        }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (loginData) {
+                        if (loginData.code === 200 && loginData.data.token) {
+                            self.addTestResult('✔ 登录测试通过', true);
+
+                            return fetch(self.apiBase + '/profile', {
+                                headers: { 'Authorization': 'Bearer ' + loginData.data.token }
+                            });
+                        } else {
+                            self.addTestResult('✗ 登录测试失败', false);
+                            throw new Error('Login failed');
+                        }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (profileData) {
+                        if (profileData.code === 200) {
+                            self.addTestResult('✔ 获取用户信息测试通过', true);
+                        } else {
+                            self.addTestResult('✗ 获取用户信息测试失败', false);
+                        }
+                    })
+                    .catch(function (err) {
+                        self.addTestResult('✗ 认证测试错误: ' + err.message, false);
+                    });
+            },
+
+            testPosts: function () {
+                var self = this;
+                if (!this.token) {
+                    this.addTestResult('✗ 请先登录后再测试文章功能', false);
+                    return;
+                }
+
+                this.addTestResult('开始文章测试...', true);
+
+                var postData = {
+                    title: '测试文章 ' + Date.now(),
+                    content: '这是一篇测试文章的内容'
+                };
+
+                var postId;
+
+                fetch(this.apiBase + '/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + this.token
+                    },
+                    body: JSON.stringify(postData)
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (createData) {
+                        if (createData.code === 200) {
+                            self.addTestResult('✔ 创建文章测试通过', true);
+                            postId = createData.data.ID;
+
+                            return fetch(self.apiBase + '/posts/' + postId);
+                        } else {
+                            self.addTestResult('✗ 创建文章测试失败', false);
+                            throw new Error('Create post failed');
+                        }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (getData) {
+                        if (getData.code === 200) {
+                            self.addTestResult('✔ 获取文章详情测试通过', true);
+
+                            return fetch(self.apiBase + '/posts/' + postId, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + self.token
+                                },
+                                body: JSON.stringify({
+                                    title: '更新后的标题',
+                                    content: '更新后的内容'
+                                })
+                            });
+                        } else {
+                            self.addTestResult('✗ 获取文章详情测试失败', false);
+                            throw new Error('Get post failed');
+                        }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (updateData) {
+                        if (updateData.code === 200) {
+                            self.addTestResult('✔ 更新文章测试通过', true);
+
+                            return fetch(self.apiBase + '/posts/' + postId, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': 'Bearer ' + self.token }
+                            });
+                        } else {
+                            self.addTestResult('✗ 更新文章测试失败', false);
+                            throw new Error('Update post failed');
+                        }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (deleteData) {
+                        if (deleteData.code === 200) {
+                            self.addTestResult('✔ 删除文章测试通过', true);
+                        } else {
+                            self.addTestResult('✗ 删除文章测试失败', false);
+                        }
+
+                        return fetch(self.apiBase + '/posts');
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (listData) {
+                        if (listData.code === 200) {
+                            self.addTestResult('✔ 获取文章列表测试通过', true);
+                        } else {
+                            self.addTestResult('✗ 获取文章列表测试失败', false);
+                        }
+                    })
+                    .catch(function (err) {
+                        self.addTestResult('✗ 文章测试错误: ' + err.message, false);
+                    });
+            },
+
+            testComments: function () {
+                var self = this;
+                if (!this.token) {
+                    this.addTestResult('✗ 请先登录后再测试评论功能', false);
+                    return;
+                }
+
+                this.addTestResult('开始评论测试...', true);
+
+                var postId;
+
+                fetch(this.apiBase + '/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + this.token
+                    },
+                    body: JSON.stringify({
+                        title: '测试评论文章',
+                        content: '用于测试评论功能'
+                    })
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (postData) {
+                        if (postData.code === 200) {
+                            postId = postData.data.ID;
+
+                            return fetch(self.apiBase + '/posts/' + postId + '/comments', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + self.token
+                                },
+                                body: JSON.stringify({
+                                    content: '这是一条测试评论'
+                                })
+                            });
+                        } else {
+                            throw new Error('Create post for comments failed');
+                        }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (commentData) {
+                        if (commentData.code === 200) {
+                            self.addTestResult('✔ 创建评论测试通过', true);
+
+                            return fetch(self.apiBase + '/comments/post/' + postId);
+                        } else {
+                            self.addTestResult('✗ 创建评论测试失败', false);
+                            throw new Error('Create comment failed');
+                        }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (getCommentsData) {
+                        if (getCommentsData.code === 200) {
+                            self.addTestResult('✔ 获取评论列表测试通过', true);
+                        } else {
+                            self.addTestResult('✗ 获取评论列表测试失败', false);
+                        }
+
+                        return fetch(self.apiBase + '/posts/' + postId, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': 'Bearer ' + self.token }
+                        });
+                    })
+                    .then(function () {
+                        // Cleanup done
+                    })
+                    .catch(function (err) {
+                        self.addTestResult('✗ 评论测试错误: ' + err.message, false);
+                    });
+            },
+
+            runAllTests: function () {
+                var self = this;
+                this.clearTestResults();
+                this.addTestResult('=== 开始运行全部测试 ===', true);
+
+                this.testHealth();
+
+                setTimeout(function () {
+                    self.testAuth();
+                }, 1000);
+
+                setTimeout(function () {
+                    self.testPosts();
+                }, 2000);
+
+                setTimeout(function () {
+                    self.testComments();
+                }, 3000);
+
+                setTimeout(function () {
+                    self.addTestResult('=== 全部测试完成 ===', true);
+                }, 5000);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            app.init();
+        });
+    </script>
+</body>
+
+</html>
