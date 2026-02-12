@@ -17,8 +17,6 @@ func InitDB() error {
 
 	// 从环境变量读取
 	dsn := os.Getenv("DATABASE_URL")
-	fmt.Println("============>DATABASE_URL:", dsn)
-
 	if dsn == "" {
 		return fmt.Errorf("DATABASE_URL 未设置")
 	}
@@ -51,3 +49,4 @@ func InitDB() error {
 func GetDB() *gorm.DB {
 	return DB
 }
+
