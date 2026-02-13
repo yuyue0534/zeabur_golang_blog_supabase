@@ -1,9 +1,12 @@
 package routes
 
 import (
+	"context"
+	"golang_blog/config"
 	"golang_blog/controllers"
 	"golang_blog/middleware"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +22,25 @@ func SetupRoutes(r *gin.Engine) {
 			"status":  "ok",
 			"message": "服务运行正常",
 		})
+	})
+	r.GET("/ready", func(c *gin.Context) {
+		db := config.GetDB()
+		if db == nil {
+			c.JSON(503, gin.H{"status": "not_ready", "reason": "db is nil"})
+			return
+		}
+		sqlDB, err := db.DB()
+		if err != nil {
+			c.JSON(503, gin.H{"status": "not_ready", "reason": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := sqlDB.PingContext(ctx); err != nil {
+			c.JSON(503, gin.H{"status": "not_ready", "reason": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"status": "ready"})
 	})
 
 	// API v1 路由组
