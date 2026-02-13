@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/url"
@@ -16,7 +17,6 @@ import (
 var DB *gorm.DB
 
 func InitDB() error {
-	// 优先使用 SUPABASE_DB_URL，其次 DATABASE_URL（兼容你现在的配置）
 	dsn := strings.TrimSpace(os.Getenv("SUPABASE_DB_URL"))
 	if dsn == "" {
 		dsn = strings.TrimSpace(os.Getenv("DATABASE_URL"))
@@ -25,24 +25,22 @@ func InitDB() error {
 		return fmt.Errorf("SUPABASE_DB_URL / DATABASE_URL 未设置")
 	}
 
-	// 如果是 URL 形式，确保带 sslmode=require（Supabase 常见要求）
 	dsn = ensureSSLModeRequire(dsn)
 
 	var err error
 	DB, err = gorm.Open(postgres.New(postgres.Config{
 		DSN: dsn,
 
-		// ✅ 关键：避免 pgx 隐式 prepared statements（对 Supabase pooler / pgbouncer 更友好）
+		// ✅ 对 Supabase pooler/pgbouncer 更稳
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
-
 	if err != nil {
-		return fmt.Errorf("连接数据库失败: %w", err)
+		return fmt.Errorf("gorm.Open 失败: %w", err)
 	}
 
-	// 可选：设置连接池参数（避免部署环境连接不稳定）
+	// ✅ 启动时就验证 DB 可用，不要等到请求时才爆炸
 	sqlDB, err := DB.DB()
 	if err != nil {
 		return fmt.Errorf("获取底层 sql.DB 失败: %w", err)
@@ -51,20 +49,23 @@ func InitDB() error {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 
-	log.Println("Supabase PostgreSQL 连接成功")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := sqlDB.PingContext(ctx); err != nil {
+		return fmt.Errorf("数据库 Ping 失败(很可能是连接串/网络/SSL问题): %w", err)
+	}
+
+	log.Println("✅ PostgreSQL 连接 & Ping 成功")
 	return nil
 }
 
-func GetDB() *gorm.DB {
-	return DB
-}
+func GetDB() *gorm.DB { return DB }
 
 func ensureSSLModeRequire(dsn string) string {
-	// gorm postgres DSN 既支持 key=val，也支持 postgres:// URL
 	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
 		u, err := url.Parse(dsn)
 		if err != nil {
-			return dsn // 解析失败就原样返回，让上层报错更直观
+			return dsn
 		}
 		q := u.Query()
 		if q.Get("sslmode") == "" {
@@ -73,8 +74,6 @@ func ensureSSLModeRequire(dsn string) string {
 		}
 		return u.String()
 	}
-
-	// key=val 形式：如果没写 sslmode，补上
 	if !strings.Contains(dsn, "sslmode=") {
 		return dsn + " sslmode=require"
 	}
