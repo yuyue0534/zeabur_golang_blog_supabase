@@ -3,9 +3,11 @@ package config
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"strings"
+	"time"
 
-	"github.com/jackc/pgx/v5"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -13,39 +15,68 @@ import (
 
 var DB *gorm.DB
 
-// InitDB 初始化数据库连接（Supabase Postgres）
 func InitDB() error {
-	dsn := os.Getenv("DATABASE_URL")
+	// 优先使用 SUPABASE_DB_URL，其次 DATABASE_URL（兼容你现在的配置）
+	dsn := strings.TrimSpace(os.Getenv("SUPABASE_DB_URL"))
 	if dsn == "" {
-		return fmt.Errorf("DATABASE_URL 未设置")
+		dsn = strings.TrimSpace(os.Getenv("DATABASE_URL"))
 	}
-	// 配置 pgx 连接
-	config, err := pgx.ParseConfig(dsn)
-	if err != nil {
-		return err
+	if dsn == "" {
+		return fmt.Errorf("SUPABASE_DB_URL / DATABASE_URL 未设置")
 	}
-	// 在 pgx v5 中不再存在 PreferSimpleProtocol 字段，使用默认连接配置
-	// 若确实需要简单协议，可在驱动层实现；此处保持默认设置
-	var gormErr error
-	DB, gormErr = gorm.Open(postgres.New(postgres.Config{
-		Conn:       nil,
-		DriverName: "pgx",
-		DSN:        config.ConnString(),
+
+	// 如果是 URL 形式，确保带 sslmode=require（Supabase 常见要求）
+	dsn = ensureSSLModeRequire(dsn)
+
+	var err error
+	DB, err = gorm.Open(postgres.New(postgres.Config{
+		DSN: dsn,
+
+		// ✅ 关键：避免 pgx 隐式 prepared statements（对 Supabase pooler / pgbouncer 更友好）
+		PreferSimpleProtocol: true,
 	}), &gorm.Config{
-		Logger:               logger.Default.LogMode(logger.Info),
-		PrepareStmt:          false,
-		DisableAutomaticPing: false,
+		Logger: logger.Default.LogMode(logger.Info),
 	})
-	if gormErr != nil {
-		return gormErr
+
+	if err != nil {
+		return fmt.Errorf("连接数据库失败: %w", err)
 	}
+
+	// 可选：设置连接池参数（避免部署环境连接不稳定）
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return fmt.Errorf("获取底层 sql.DB 失败: %w", err)
+	}
+	sqlDB.SetMaxOpenConns(20)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+
 	log.Println("Supabase PostgreSQL 连接成功")
-	log.Println("数据库连接成功（使用现有表结构）")
-	log.Println("数据库表迁移成功 (PostgreSQL)")
 	return nil
 }
 
-// GetDB 获取数据库实例
 func GetDB() *gorm.DB {
 	return DB
+}
+
+func ensureSSLModeRequire(dsn string) string {
+	// gorm postgres DSN 既支持 key=val，也支持 postgres:// URL
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		u, err := url.Parse(dsn)
+		if err != nil {
+			return dsn // 解析失败就原样返回，让上层报错更直观
+		}
+		q := u.Query()
+		if q.Get("sslmode") == "" {
+			q.Set("sslmode", "require")
+			u.RawQuery = q.Encode()
+		}
+		return u.String()
+	}
+
+	// key=val 形式：如果没写 sslmode，补上
+	if !strings.Contains(dsn, "sslmode=") {
+		return dsn + " sslmode=require"
+	}
+	return dsn
 }
