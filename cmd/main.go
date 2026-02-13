@@ -22,6 +22,7 @@ func main() {
 
 	// 创建 Gin 引擎
 	r := gin.Default()
+	r.Use(gin.Recovery()) // ✅ 防止 panic 变 502
 
 	// 配置CORS - 关键是要包含Authorization
 	config := cors.Config{
@@ -43,3 +44,4 @@ func main() {
 		log.Fatal("服务器启动失败:", err)
 	}
 }
+
