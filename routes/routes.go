@@ -20,7 +20,7 @@ func SetupRoutes(r *gin.Engine) {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "ok",
-			"message": "服务运行正常",
+			"message": "服务运行正常, by yy3",
 		})
 	})
 	r.GET("/ready", func(c *gin.Context) {
@@ -83,3 +83,4 @@ func SetupRoutes(r *gin.Engine) {
 		}
 	}
 }
+
